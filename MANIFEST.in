@@ -1,0 +1,3 @@
+include Makefile
+include README.rst
+include c2-client.spec

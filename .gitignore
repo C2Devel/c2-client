@@ -1,0 +1,8 @@
+.venv/
+build/
+dist/
+rpms/
+*.eggs/
+*.egg-info/
+*.tar.gz
+*.rpm

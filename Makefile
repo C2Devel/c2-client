@@ -35,5 +35,12 @@ rpm:
 		--rebuild srpms/$(PACKAGE)-$(VERSION)-$(RELEASE).src.rpm \
 		--resultdir rpms/$(DIST) --no-cleanup-after
 
+copr: srpm
+	@copr-cli build --nowait c2devel/c2-sdk \
+		srpms/$(PACKAGE)-$(VERSION)-$(RELEASE).src.rpm
+
+pypi: clean
+	@python setup.py sdist bdist_wheel upload
+
 clean:
 	@rm -rf .venv/ build/ dist/ *.egg* .eggs/ rpms/ srpms/ *.tar.gz *.rpm

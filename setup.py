@@ -12,7 +12,7 @@ def get_description():
         return readme.read()
 
 install_requires = [
-    "boto", "lxml"
+    "boto", "lxml", "six"
 ]
 # argparse moved to stdlib in python2.7
 if sys.version_info[0] == 2 and sys.version_info[1] <= 6:
@@ -37,6 +37,7 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3"
     ],
     install_requires=install_requires,
     packages=find_packages(),

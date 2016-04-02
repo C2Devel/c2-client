@@ -1,3 +1,4 @@
 argparse; python_version=="2.6"
 boto
 lxml
+six

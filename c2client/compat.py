@@ -1,6 +1,6 @@
 from distutils.version import StrictVersion
 from types import MethodType
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 
 import boto.ec2
 import boto.ec2.cloudwatch

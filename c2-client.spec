@@ -19,7 +19,7 @@ BuildRequires: python-setuptools
 
 Requires: python-setuptools
 Requires: python-boto >= 2.12.0
-Requires: python-lxml
+Requires: python-lxml python-six
 %if 0%{?rhel} == 6
 Requires: python-argparse
 %endif

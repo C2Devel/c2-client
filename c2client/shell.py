@@ -15,6 +15,9 @@ from c2client.utils import prettify_xml
 if hasattr(ssl, '_create_unverified_context'):
     ssl._create_default_https_context = ssl._create_unverified_context
 
+if os.environ.get("DEBUG"):
+    boto.set_stream_logger("c2")
+
 
 class EnvironmentVariableError(Exception):
     def __init__(self, name):

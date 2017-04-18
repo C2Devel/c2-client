@@ -1,4 +1,4 @@
-.PHONY: env sources srpm rpm clean
+.PHONY: env sources srpm rpm clean pypi copr
 
 DIST    ?= epel-6-x86_64
 VENV    ?= .venv

@@ -6,4 +6,4 @@ def prettify_xml(string):
 
     parser = etree.XMLParser(remove_blank_text=True)
     tree = etree.fromstring(string, parser)
-    return etree.tostring(tree, pretty_print=True)
+    return etree.tostring(tree, pretty_print=True, encoding="unicode")

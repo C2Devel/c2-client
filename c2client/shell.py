@@ -2,6 +2,7 @@ from __future__ import print_function, unicode_literals
 
 import argparse
 import codecs
+import json
 import os
 import ssl
 import sys
@@ -110,3 +111,26 @@ def cw_main():
     response = connection.make_request(action, args)
 
     print(prettify_xml(response.read()))
+
+
+@exitcode
+def ct_main():
+    """Main function for CloudTrail API Client."""
+
+    action, args = parse_arguments("c2-ct")
+
+    configure_boto()
+    cloudtrail_endpoint = os.environ.get("AWS_CLOUDTRAIL_URL")
+    if not cloudtrail_endpoint:
+        raise EnvironmentVariableError("AWS_CLOUDTRAIL_URL")
+
+    connection = get_connection("ct", cloudtrail_endpoint)
+    if "MaxResults" in args:
+        args["MaxResults"] = int(args["MaxResults"])
+    if "StartTime" in args:
+        args["StartTime"] = int(args["StartTime"])
+    if "EndTime" in args:
+        args["EndTime"] = int(args["EndTime"])
+    response = connection.make_request(action, json.dumps(args))
+
+    print(json.dumps(response, indent=4, sort_keys=True))

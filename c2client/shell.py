@@ -1,8 +1,10 @@
 from __future__ import print_function, unicode_literals
 
 import argparse
+import codecs
 import os
 import ssl
+import sys
 
 import boto
 
@@ -11,6 +13,10 @@ from functools import wraps
 from c2client.compat import get_connection
 from c2client.utils import prettify_xml
 
+# Nasty hack to workaround default ascii codec
+if sys.version_info[0] < 3:
+    sys.stdout = codecs.getwriter('utf8')(sys.stdout)
+    sys.stderr = codecs.getwriter('utf8')(sys.stderr)
 
 if hasattr(ssl, '_create_unverified_context'):
     ssl._create_default_https_context = ssl._create_unverified_context

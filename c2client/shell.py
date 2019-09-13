@@ -12,7 +12,7 @@ import boto
 from functools import wraps
 
 from c2client.compat import get_connection
-from c2client.utils import prettify_xml
+from c2client.utils import prettify_xml, from_dot_notation
 
 # Nasty hack to workaround default ascii codec
 if sys.version_info[0] < 3:
@@ -131,6 +131,7 @@ def ct_main():
         args["StartTime"] = int(args["StartTime"])
     if "EndTime" in args:
         args["EndTime"] = int(args["EndTime"])
-    response = connection.make_request(action, json.dumps(args))
+
+    response = connection.make_request(action, json.dumps(from_dot_notation(args)))
 
     print(json.dumps(response, indent=4, sort_keys=True))

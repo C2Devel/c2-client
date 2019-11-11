@@ -43,8 +43,9 @@ setup(
     packages=find_packages(),
     entry_points={
         "console_scripts": [
+            "c2-ct = c2client.shell:ct_main",
             "c2-cw = c2client.shell:cw_main",
-            "c2-ec2 = c2client.shell:ec2_main"
+            "c2-ec2 = c2client.shell:ec2_main",
         ]
     },
 )

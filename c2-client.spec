@@ -53,6 +53,7 @@ Simple command-line utility for sending custom requests to CROC Cloud platform.
 
 %_bindir/c2-cw
 %_bindir/c2-ec2
+%_bindir/c2-ct
 %doc README.rst
 
 

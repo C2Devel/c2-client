@@ -4,7 +4,7 @@
 %endif
 
 Name:    c2-client
-Version: 0.6
+Version: 0.7
 Release: 1%{?dist}
 Summary: CROC Cloud platform API client
 
@@ -18,7 +18,7 @@ BuildRequires: python2-devel
 BuildRequires: python-setuptools
 
 Requires: python-setuptools
-Requires: python-boto >= 2.12.0
+Requires: python-boto >= 2.46.1
 Requires: python-lxml python-six
 %if 0%{?rhel} == 6
 Requires: python-argparse
@@ -62,6 +62,9 @@ Simple command-line utility for sending custom requests to CROC Cloud platform.
 
 
 %changelog
+* Mon Dec 02 2019 Andrey Kulaev <adkulaev@gmail.com> - 0.7-1
+- New version
+
 * Mon Nov 11 2019 Andrey Kulaev <adkulaev@gmail.com> - 0.6-1
 - New version
 

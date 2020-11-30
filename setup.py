@@ -46,6 +46,7 @@ setup(
             "c2-ct = c2client.shell:ct_main",
             "c2-cw = c2client.shell:cw_main",
             "c2-ec2 = c2client.shell:ec2_main",
+            "c2rc-convert = c2client.c2rc_convert:main",
         ]
     },
 )

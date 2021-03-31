@@ -27,8 +27,8 @@ setup(
     license="GPL3",
     author="CROC Cloud Team",
     author_email="devel@croc.ru",
-    maintainer="Mikhail Ushanov",
-    maintainer_email="gm.mephisto@gmail.com",
+    maintainer="Andrey Kulaev",
+    maintainer_email="adkulaev@gmail.com",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",

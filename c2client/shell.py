@@ -49,13 +49,8 @@ def exitcode(func):
     def wrapper(*args, **kwargs):
         try:
             func(*args, **kwargs)
-        except KeyboardInterrupt:
-            return os.EX_TEMPFAIL
         except Exception as e:
-            print("Error: {0}".format(e))
-            return os.EX_SOFTWARE
-        else:
-            return os.EX_OK
+            return e
     return wrapper
 
 

@@ -1,6 +1,8 @@
+import os
+
 from lxml import etree
 
-from c2client.errors import MalformedParametersError
+from c2client.errors import EnvironmentVariableError, MalformedParametersError
 
 
 def prettify_xml(string):
@@ -51,3 +53,12 @@ def _process_tokens(tokens, value, parent, index):
         _process_tokens(rest, value, parent[index], key)
     else:
         parent[index][key] = value
+
+
+def get_env_var(name):
+    """Returns env_var by it's name or raises EnvironmentError."""
+
+    env_var = os.environ.get(name)
+    if env_var is None:
+        raise EnvironmentVariableError(name)
+    return env_var

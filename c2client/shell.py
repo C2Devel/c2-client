@@ -12,7 +12,7 @@ import boto
 from functools import wraps
 
 from c2client.compat import get_connection
-from c2client.utils import prettify_xml, from_dot_notation
+from c2client.utils import prettify_xml, from_dot_notation, get_env_var
 
 # Nasty hack to workaround default ascii codec
 if sys.version_info[0] < 3:
@@ -75,9 +75,7 @@ def ec2_main():
     action, args = parse_arguments("c2-ec2")
 
     configure_boto()
-    ec2_endpoint = os.environ.get("EC2_URL")
-    if not ec2_endpoint:
-        raise EnvironmentVariableError("EC2_URL")
+    ec2_endpoint = get_env_var("EC2_URL")
 
     connection = get_connection("ec2", ec2_endpoint)
     response = connection.make_request(action, args)
@@ -92,9 +90,7 @@ def cw_main():
     action, args = parse_arguments("c2-cw")
 
     configure_boto()
-    cloudwatch_endpoint = os.environ.get("AWS_CLOUDWATCH_URL")
-    if not cloudwatch_endpoint:
-        raise EnvironmentVariableError("AWS_CLOUDWATCH_URL")
+    cloudwatch_endpoint = get_env_var("AWS_CLOUDWATCH_URL")
 
     connection = get_connection("cw", cloudwatch_endpoint)
     response = connection.make_request(action, args)
@@ -109,9 +105,7 @@ def ct_main():
     action, args = parse_arguments("c2-ct")
 
     configure_boto()
-    cloudtrail_endpoint = os.environ.get("AWS_CLOUDTRAIL_URL")
-    if not cloudtrail_endpoint:
-        raise EnvironmentVariableError("AWS_CLOUDTRAIL_URL")
+    cloudtrail_endpoint = get_env_var("AWS_CLOUDTRAIL_URL")
 
     connection = get_connection("ct", cloudtrail_endpoint)
     if "MaxResults" in args:

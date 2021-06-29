@@ -16,10 +16,10 @@ from c2client.utils import prettify_xml, from_dot_notation
 
 # Nasty hack to workaround default ascii codec
 if sys.version_info[0] < 3:
-    sys.stdout = codecs.getwriter('utf8')(sys.stdout)
-    sys.stderr = codecs.getwriter('utf8')(sys.stderr)
+    sys.stdout = codecs.getwriter("utf8")(sys.stdout)
+    sys.stderr = codecs.getwriter("utf8")(sys.stderr)
 
-if hasattr(ssl, '_create_unverified_context'):
+if hasattr(ssl, "_create_unverified_context"):
     ssl._create_default_https_context = ssl._create_unverified_context
 
 if os.environ.get("DEBUG"):

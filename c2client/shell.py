@@ -26,12 +26,6 @@ if os.environ.get("DEBUG"):
     boto.set_stream_logger("c2")
 
 
-class EnvironmentVariableError(Exception):
-    def __init__(self, name):
-        super(EnvironmentVariableError, self).__init__(
-            "Environment variable '{0}' not found.".format(name.upper()))
-
-
 def configure_boto():
     """Configure boto runtime for CROC Cloud"""
 

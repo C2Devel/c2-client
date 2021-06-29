@@ -1,5 +1,7 @@
 from lxml import etree
 
+from c2client.errors import MalformedParametersError
+
 
 def prettify_xml(string):
     """Returns prettified XML string."""
@@ -7,12 +9,6 @@ def prettify_xml(string):
     parser = etree.XMLParser(remove_blank_text=True)
     tree = etree.fromstring(string, parser)
     return etree.tostring(tree, pretty_print=True, encoding="unicode")
-
-
-class MalformedParametersException(Exception):
-    def __init__(self):
-        super(MalformedParametersException, self).__init__(
-            "Malformed parameters.")
 
 
 def from_dot_notation(source):
@@ -33,7 +29,7 @@ def from_dot_notation(source):
         try:
             _process_tokens(key.split("."), value, result, "result")
         except Exception:
-            raise MalformedParametersException
+            raise MalformedParametersError
     return result["result"]
 
 
@@ -49,7 +45,7 @@ def _process_tokens(tokens, value, parent, index):
     elif isinstance(parent[index], list) and len(parent[index]) == key:
         parent[index].append({})
     elif not (isinstance(parent[index], list) and len(parent[index]) > key):
-        raise MalformedParametersException
+        raise MalformedParametersError
 
     if rest:
         _process_tokens(rest, value, parent[index], key)

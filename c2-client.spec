@@ -4,7 +4,7 @@
 %endif
 
 Name:    c2-client
-Version: 0.8
+Version: 0.9
 Release: 1%{?dist}
 Summary: CROC Cloud platform API client
 
@@ -62,6 +62,9 @@ Simple command-line utility for sending custom requests to CROC Cloud platform.
 
 
 %changelog
+* Fri Jul 02 2021 Andrey Kulaev <adkulaev@gmail.com> - 0.9-1
+- New version
+
 * Wed Mar 31 2021 Andrey Kulaev <adkulaev@gmail.com> - 0.8-1
 - New version
 

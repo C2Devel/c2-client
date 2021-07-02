@@ -8,28 +8,24 @@ import ssl
 import sys
 
 import boto
+import boto3
+import inflection
 
 from functools import wraps
 
 from c2client.compat import get_connection
-from c2client.utils import prettify_xml, from_dot_notation
+from c2client.utils import prettify_xml, from_dot_notation, get_env_var
 
 # Nasty hack to workaround default ascii codec
 if sys.version_info[0] < 3:
-    sys.stdout = codecs.getwriter('utf8')(sys.stdout)
-    sys.stderr = codecs.getwriter('utf8')(sys.stderr)
+    sys.stdout = codecs.getwriter("utf8")(sys.stdout)
+    sys.stderr = codecs.getwriter("utf8")(sys.stderr)
 
-if hasattr(ssl, '_create_unverified_context'):
+if hasattr(ssl, "_create_unverified_context"):
     ssl._create_default_https_context = ssl._create_unverified_context
 
 if os.environ.get("DEBUG"):
     boto.set_stream_logger("c2")
-
-
-class EnvironmentVariableError(Exception):
-    def __init__(self, name):
-        super(EnvironmentVariableError, self).__init__(
-            "Environment variable '{0}' not found.".format(name.upper()))
 
 
 def configure_boto():
@@ -81,9 +77,7 @@ def ec2_main():
     action, args = parse_arguments("c2-ec2")
 
     configure_boto()
-    ec2_endpoint = os.environ.get("EC2_URL")
-    if not ec2_endpoint:
-        raise EnvironmentVariableError("EC2_URL")
+    ec2_endpoint = get_env_var("EC2_URL")
 
     connection = get_connection("ec2", ec2_endpoint)
     response = connection.make_request(action, args)
@@ -98,9 +92,7 @@ def cw_main():
     action, args = parse_arguments("c2-cw")
 
     configure_boto()
-    cloudwatch_endpoint = os.environ.get("AWS_CLOUDWATCH_URL")
-    if not cloudwatch_endpoint:
-        raise EnvironmentVariableError("AWS_CLOUDWATCH_URL")
+    cloudwatch_endpoint = get_env_var("AWS_CLOUDWATCH_URL")
 
     connection = get_connection("cw", cloudwatch_endpoint)
     response = connection.make_request(action, args)
@@ -115,9 +107,7 @@ def ct_main():
     action, args = parse_arguments("c2-ct")
 
     configure_boto()
-    cloudtrail_endpoint = os.environ.get("AWS_CLOUDTRAIL_URL")
-    if not cloudtrail_endpoint:
-        raise EnvironmentVariableError("AWS_CLOUDTRAIL_URL")
+    cloudtrail_endpoint = get_env_var("AWS_CLOUDTRAIL_URL")
 
     connection = get_connection("ct", cloudtrail_endpoint)
     if "MaxResults" in args:
@@ -130,3 +120,40 @@ def ct_main():
     response = connection.make_request(action, json.dumps(from_dot_notation(args)))
 
     print(json.dumps(response, indent=4, sort_keys=True))
+
+
+@exitcode
+def eks_main():
+    """Main function for EKS API Client."""
+
+    action, args = parse_arguments("c2-eks")
+
+    for key, value in args.items():
+        if value.isdigit():
+            args[key] = int(value)
+        elif value.lower() == "true":
+            args[key] = True
+        elif value.lower() == "false":
+            args[key] = False
+
+    eks_endpoint = get_env_var("EKS_URL")
+
+    aws_access_key_id = get_env_var("AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = get_env_var("AWS_SECRET_ACCESS_KEY")
+
+    session = boto3.Session(
+       aws_access_key_id=aws_access_key_id,
+       aws_secret_access_key=aws_secret_access_key,
+       region_name="croc",
+    )
+
+    eks_client = session.client(
+       "eks",
+       endpoint_url=eks_endpoint,
+    )
+
+    result = getattr(eks_client, inflection.underscore(action))(**from_dot_notation(args))
+
+    result.pop("ResponseMetadata", None)
+
+    print(json.dumps(result, indent=4, sort_keys=True))

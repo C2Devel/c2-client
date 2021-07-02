@@ -1,4 +1,8 @@
+import os
+
 from lxml import etree
+
+from c2client.errors import EnvironmentVariableError, MalformedParametersError
 
 
 def prettify_xml(string):
@@ -7,12 +11,6 @@ def prettify_xml(string):
     parser = etree.XMLParser(remove_blank_text=True)
     tree = etree.fromstring(string, parser)
     return etree.tostring(tree, pretty_print=True, encoding="unicode")
-
-
-class MalformedParametersException(Exception):
-    def __init__(self):
-        super(MalformedParametersException, self).__init__(
-            "Malformed parameters.")
 
 
 def from_dot_notation(source):
@@ -33,7 +31,7 @@ def from_dot_notation(source):
         try:
             _process_tokens(key.split("."), value, result, "result")
         except Exception:
-            raise MalformedParametersException
+            raise MalformedParametersError
     return result["result"]
 
 
@@ -49,9 +47,18 @@ def _process_tokens(tokens, value, parent, index):
     elif isinstance(parent[index], list) and len(parent[index]) == key:
         parent[index].append({})
     elif not (isinstance(parent[index], list) and len(parent[index]) > key):
-        raise MalformedParametersException
+        raise MalformedParametersError
 
     if rest:
         _process_tokens(rest, value, parent[index], key)
     else:
         parent[index][key] = value
+
+
+def get_env_var(name):
+    """Returns env_var by it's name or raises EnvironmentError."""
+
+    env_var = os.environ.get(name)
+    if env_var is None:
+        raise EnvironmentVariableError(name)
+    return env_var

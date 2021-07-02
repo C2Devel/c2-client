@@ -12,7 +12,11 @@ def get_description():
         return readme.read()
 
 install_requires = [
-    "boto", "lxml", "six"
+    "boto",
+    "boto3",
+    "inflection==0.3.1",
+    "lxml",
+    "six",
 ]
 # argparse moved to stdlib in python2.7
 if sys.version_info[0] == 2 and sys.version_info[1] <= 6:
@@ -46,6 +50,7 @@ setup(
             "c2-ct = c2client.shell:ct_main",
             "c2-cw = c2client.shell:cw_main",
             "c2-ec2 = c2client.shell:ec2_main",
+            "c2-eks = c2client.shell:eks_main",
             "c2rc-convert = c2client.c2rc_convert:main",
         ]
     },

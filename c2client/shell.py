@@ -157,3 +157,40 @@ def eks_main():
     result.pop("ResponseMetadata", None)
 
     print(json.dumps(result, indent=4, sort_keys=True))
+
+
+@exitcode
+def autoscaling_main():
+    """Main function for Auto Scaling API Client."""
+
+    action, args = parse_arguments("c2-as")
+
+    for key, value in args.items():
+        if value.isdigit():
+            args[key] = int(value)
+        elif value.lower() == "true":
+            args[key] = True
+        elif value.lower() == "false":
+            args[key] = False
+
+    auto_scaling_endpoint = get_env_var("AUTO_SCALING_URL")
+
+    aws_access_key_id = get_env_var("AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = get_env_var("AWS_SECRET_ACCESS_KEY")
+
+    session = boto3.Session(
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        region_name="croc",
+    )
+
+    auto_scaling_client = session.client(
+        "autoscaling",
+        endpoint_url=auto_scaling_endpoint,
+    )
+
+    result = getattr(auto_scaling_client, inflection.underscore(action))(**from_dot_notation(args))
+
+    result.pop("ResponseMetadata", None)
+
+    print(json.dumps(result, indent=4, sort_keys=True))

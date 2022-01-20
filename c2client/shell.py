@@ -142,14 +142,14 @@ def eks_main():
     aws_secret_access_key = get_env_var("AWS_SECRET_ACCESS_KEY")
 
     session = boto3.Session(
-       aws_access_key_id=aws_access_key_id,
-       aws_secret_access_key=aws_secret_access_key,
-       region_name="croc",
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        region_name="croc",
     )
 
     eks_client = session.client(
-       "eks",
-       endpoint_url=eks_endpoint,
+        "eks",
+        endpoint_url=eks_endpoint,
     )
 
     result = getattr(eks_client, inflection.underscore(action))(**from_dot_notation(args))

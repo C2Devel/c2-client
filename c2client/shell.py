@@ -28,14 +28,27 @@ if os.environ.get("DEBUG"):
     boto.set_stream_logger("c2")
 
 
-def configure_boto():
+def get_boto3_client(service, endpoint, aws_access_key_id, aws_secret_access_key, verify):
+    """Returns boto3 client connection to specified Cloud service."""
+
+    return boto3.client(
+        service,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        region_name="croc",
+        endpoint_url=endpoint,
+        verify=verify,
+    )
+
+
+def configure_boto(verify):
     """Configure boto runtime for CROC Cloud"""
 
     if not boto.config.has_section("Boto"):
         boto.config.add_section("Boto")
     boto.config.set("Boto", "is_secure", "True")
     boto.config.set("Boto", "num_retries", "0")
-    boto.config.set("Boto", "https_validate_certificates", "False")
+    boto.config.set("Boto", "https_validate_certificates", str(verify))
 
 
 def exitcode(func):
@@ -58,6 +71,11 @@ def parse_arguments(program):
 
     parser = argparse.ArgumentParser(prog=program)
     parser.add_argument("action", help="The action that you want to perform.")
+    parser.add_argument(
+        "--no-verify-ssl",
+        action="store_false",
+        help="disable verifying ssl certificate",
+        required=False)
     parser.add_argument("parameters", nargs="*",
         help="Any parameters for the action. "
              "Parameters specified by parameter key and "
@@ -65,18 +83,19 @@ def parse_arguments(program):
     args = parser.parse_args()
 
     params = args.parameters
+    no_verify_ssl = args.no_verify_ssl
     parameters = dict(zip(params[::2], params[1::2]))
 
-    return args.action, parameters
+    return args.action, parameters, no_verify_ssl
 
 
 @exitcode
 def ec2_main():
     """Main function for EC2 API Client."""
 
-    action, args = parse_arguments("c2-ec2")
+    action, args, verify = parse_arguments("c2-ec2")
 
-    configure_boto()
+    configure_boto(verify)
     ec2_endpoint = get_env_var("EC2_URL")
 
     connection = get_connection("ec2", ec2_endpoint)
@@ -89,9 +108,9 @@ def ec2_main():
 def cw_main():
     """Main function for CloudWatch API Client."""
 
-    action, args = parse_arguments("c2-cw")
+    action, args, verify = parse_arguments("c2-cw")
 
-    configure_boto()
+    configure_boto(verify)
     cloudwatch_endpoint = get_env_var("AWS_CLOUDWATCH_URL")
 
     connection = get_connection("cw", cloudwatch_endpoint)
@@ -104,9 +123,9 @@ def cw_main():
 def ct_main():
     """Main function for CloudTrail API Client."""
 
-    action, args = parse_arguments("c2-ct")
+    action, args, verify = parse_arguments("c2-ct")
 
-    configure_boto()
+    configure_boto(verify)
     cloudtrail_endpoint = get_env_var("AWS_CLOUDTRAIL_URL")
 
     connection = get_connection("ct", cloudtrail_endpoint)
@@ -126,7 +145,7 @@ def ct_main():
 def eks_main():
     """Main function for EKS API Client."""
 
-    action, args = parse_arguments("c2-eks")
+    action, args, verify = parse_arguments("c2-eks")
 
     for key, value in args.items():
         if value.isdigit():
@@ -141,16 +160,7 @@ def eks_main():
     aws_access_key_id = get_env_var("AWS_ACCESS_KEY_ID")
     aws_secret_access_key = get_env_var("AWS_SECRET_ACCESS_KEY")
 
-    session = boto3.Session(
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-        region_name="croc",
-    )
-
-    eks_client = session.client(
-        "eks",
-        endpoint_url=eks_endpoint,
-    )
+    eks_client = get_boto3_client("eks", eks_endpoint, aws_access_key_id, aws_secret_access_key, verify)
 
     result = getattr(eks_client, inflection.underscore(action))(**from_dot_notation(args))
 
@@ -163,7 +173,7 @@ def eks_main():
 def autoscaling_main():
     """Main function for Auto Scaling API Client."""
 
-    action, args = parse_arguments("c2-as")
+    action, args, verify = parse_arguments("c2-as")
 
     for key, value in args.items():
         if value.isdigit():
@@ -178,16 +188,8 @@ def autoscaling_main():
     aws_access_key_id = get_env_var("AWS_ACCESS_KEY_ID")
     aws_secret_access_key = get_env_var("AWS_SECRET_ACCESS_KEY")
 
-    session = boto3.Session(
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-        region_name="croc",
-    )
-
-    auto_scaling_client = session.client(
-        "autoscaling",
-        endpoint_url=auto_scaling_endpoint,
-    )
+    auto_scaling_client = get_boto3_client("autoscaling", auto_scaling_endpoint, aws_access_key_id,
+                                           aws_secret_access_key, verify)
 
     result = getattr(auto_scaling_client, inflection.underscore(action))(**from_dot_notation(args))
 

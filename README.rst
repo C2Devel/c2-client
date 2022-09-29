@@ -24,12 +24,13 @@ Usage
    usage: c2-ec2 [-h] action [parameters [parameters ...]]
 
    positional arguments:
-      action      The action that you want to perform.
-      parameters  Any parameters for the action. Parameters specified by parameter
-                  key and parameter value separated by space.
+      action          The action that you want to perform.
+      parameters      Any parameters for the action. Parameters specified by parameter
+                      key and parameter value separated by space.
 
    optional arguments:
-      -h, --help  show this help message and exit
+      -h, --help      show this help message and exit
+      --no-verify-ssl disable verifying ssl certificate
 
 
 Common request syntax:

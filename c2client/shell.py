@@ -2,6 +2,7 @@ from __future__ import print_function, unicode_literals
 
 import argparse
 import codecs
+import datetime
 import json
 import os
 import ssl
@@ -196,3 +197,40 @@ def autoscaling_main():
     result.pop("ResponseMetadata", None)
 
     print(json.dumps(result, indent=4, sort_keys=True))
+
+
+@exitcode
+def elb_main():
+    """Main function for Elastic Load Balancer API Client."""
+
+    action, args, verify = parse_arguments("c2-elb")
+
+    def serialize_datetime(obj):
+        """Default datetime serializer."""
+
+        if isinstance(obj, datetime.datetime):
+            return str(obj)
+
+    for key, value in args.items():
+        if value.isdigit():
+            args[key] = int(value)
+        elif value.lower() == "true":
+            args[key] = True
+        elif value.lower() == "false":
+            args[key] = False
+
+    elb_endpoint = get_env_var("ELB_URL")
+
+    aws_access_key_id = get_env_var("AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = get_env_var("AWS_SECRET_ACCESS_KEY")
+
+    elb_client = get_boto3_client("elbv2", elb_endpoint,
+                                  aws_access_key_id,
+                                  aws_secret_access_key,
+                                  verify)
+
+    result = getattr(elb_client, inflection.underscore(action))(**from_dot_notation(args))
+
+    result.pop("ResponseMetadata", None)
+
+    print(json.dumps(result, indent=4, sort_keys=True, default=serialize_datetime))

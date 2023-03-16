@@ -139,7 +139,7 @@ def ct_main():
 
     response = connection.make_request(action, json.dumps(from_dot_notation(args)))
 
-    print(json.dumps(response, indent=4, sort_keys=True))
+    print(json.dumps(response, indent=4, sort_keys=True, default=str))
 
 
 @exitcode
@@ -167,7 +167,7 @@ def eks_main():
 
     result.pop("ResponseMetadata", None)
 
-    print(json.dumps(result, indent=4, sort_keys=True))
+    print(json.dumps(result, indent=4, sort_keys=True, default=str))
 
 
 @exitcode
@@ -196,7 +196,7 @@ def autoscaling_main():
 
     result.pop("ResponseMetadata", None)
 
-    print(json.dumps(result, indent=4, sort_keys=True))
+    print(json.dumps(result, indent=4, sort_keys=True, default=str))
 
 
 @exitcode
@@ -204,12 +204,6 @@ def elb_main():
     """Main function for Elastic Load Balancer API Client."""
 
     action, args, verify = parse_arguments("c2-elb")
-
-    def serialize_datetime(obj):
-        """Default datetime serializer."""
-
-        if isinstance(obj, datetime.datetime):
-            return str(obj)
 
     for key, value in args.items():
         if value.isdigit():
@@ -233,4 +227,4 @@ def elb_main():
 
     result.pop("ResponseMetadata", None)
 
-    print(json.dumps(result, indent=4, sort_keys=True, default=serialize_datetime))
+    print(json.dumps(result, indent=4, sort_keys=True, default=str))

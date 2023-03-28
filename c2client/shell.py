@@ -76,6 +76,11 @@ def parse_arguments(program):
         action="store_false",
         help="disable verifying ssl certificate",
         required=False)
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Read parameters from json instead of key and value pairs.",
+        required=False)
     parser.add_argument("parameters", nargs="*",
         help="Any parameters for the action. "
              "Parameters specified by parameter key and "
@@ -83,10 +88,22 @@ def parse_arguments(program):
     args = parser.parse_args()
 
     params = args.parameters
+    if args.json:
+        parameters = read_json(params)
+    else:
+        parameters = dict(zip(params[::2], params[1::2]))
     no_verify_ssl = args.no_verify_ssl
-    parameters = dict(zip(params[::2], params[1::2]))
 
     return args.action, parameters, no_verify_ssl
+
+
+def read_json(params):
+    if params:
+        json_str = params[0]
+        if json_str == "-":
+            json_str = sys.stdin.read()
+        return json.loads(json_str)
+    return {}
 
 
 @exitcode

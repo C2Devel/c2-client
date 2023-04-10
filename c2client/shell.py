@@ -228,3 +228,34 @@ def elb_main():
     result.pop("ResponseMetadata", None)
 
     print(json.dumps(result, indent=4, sort_keys=True, default=str))
+
+
+@exitcode
+def route53_main():
+    """Main function for Route53 API Client."""
+
+    action, args, verify = parse_arguments("c2-route53")
+
+    for key, value in args.items():
+        if value.isdigit():
+            args[key] = int(value)
+        elif value.lower() == "true":
+            args[key] = True
+        elif value.lower() == "false":
+            args[key] = False
+
+    r53_endpoint = get_env_var("ROUTE53_URL")
+
+    aws_access_key_id = get_env_var("AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = get_env_var("AWS_SECRET_ACCESS_KEY")
+
+    r53_client = get_boto3_client("route53", r53_endpoint,
+                                  aws_access_key_id,
+                                  aws_secret_access_key,
+                                  verify)
+
+    result = getattr(r53_client, inflection.underscore(action))(**from_dot_notation(args))
+
+    result.pop("ResponseMetadata", None)
+
+    print(json.dumps(result, indent=4, sort_keys=True, default=str))

@@ -22,6 +22,7 @@ install_requires = [
 
 entrypoints = [
     ("c2-as", "ASClient"),
+    ("c2-bs", "BSClient"),
     ("c2-ct", "CTClient"),
     ("c2-cw", "CWClient"),
     ("c2-ec2", "EC2Client"),

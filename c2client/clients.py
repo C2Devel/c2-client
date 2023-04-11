@@ -208,6 +208,12 @@ class ASClient(C2Client):
     client_name = "autoscaling"
 
 
+class BSClient(C2Client):
+
+    url_key = "BACKUP_URL"
+    client_name = "backup"
+
+
 class EKSClient(C2Client):
 
     url_key = "EKS_URL"

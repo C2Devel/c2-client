@@ -1,4 +1,5 @@
-boto
-boto3 @ git://github.com/C2Devel/boto3.git@develop
+-e git+https://github.com/C2Devel/boto.git@master#egg=boto
+-e git+https://github.com/C2Devel/boto3.git@develop#egg=boto3
+-e git+https://github.com/C2Devel/botocore.git@develop#egg=botocore
 inflection==0.3.1
 lxml

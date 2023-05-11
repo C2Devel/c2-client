@@ -77,6 +77,11 @@ def parse_arguments(program):
         action="store_false",
         help="disable verifying ssl certificate",
         required=False)
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Read parameters from json instead of key and value pairs.",
+        required=False)
     parser.add_argument("parameters", nargs="*",
         help="Any parameters for the action. "
              "Parameters specified by parameter key and "
@@ -84,10 +89,22 @@ def parse_arguments(program):
     args = parser.parse_args()
 
     params = args.parameters
+    if args.json:
+        parameters = read_json(params)
+    else:
+        parameters = dict(zip(params[::2], params[1::2]))
     no_verify_ssl = args.no_verify_ssl
-    parameters = dict(zip(params[::2], params[1::2]))
 
     return args.action, parameters, no_verify_ssl
+
+
+def read_json(params):
+    if params:
+        json_str = params[0]
+        if json_str == "-":
+            json_str = sys.stdin.read()
+        return json.loads(json_str)
+    return {}
 
 
 @exitcode
@@ -168,6 +185,33 @@ def eks_main():
     result.pop("ResponseMetadata", None)
 
     print(json.dumps(result, indent=4, sort_keys=True, default=str))
+
+@exitcode
+def paas_main():
+    """Main function for PaaS API Client."""
+
+    action, args, verify = parse_arguments("c2-paas")
+
+    for key, value in args.items():
+        if value.isdigit():
+            args[key] = int(value)
+        elif value.lower() == "true":
+            args[key] = True
+        elif value.lower() == "false":
+            args[key] = False
+
+    paas_endpoint = get_env_var("PAAS_URL")
+
+    aws_access_key_id = get_env_var("AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = get_env_var("AWS_SECRET_ACCESS_KEY")
+
+    paas_client = get_boto3_client("paas", paas_endpoint, aws_access_key_id, aws_secret_access_key, verify)
+
+    result = getattr(paas_client, inflection.underscore(action))(**from_dot_notation(args))
+
+    result.pop("ResponseMetadata", None)
+
+    print(json.dumps(result, indent=4, sort_keys=True))
 
 @exitcode
 def paas_main():

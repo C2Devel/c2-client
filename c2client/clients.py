@@ -220,6 +220,12 @@ class EKSClient(C2Client):
     client_name = "eks"
 
 
+class LegacyEKSClient(C2Client):
+
+    url_key = "LEGACY_EKS_URL"
+    client_name = "eks-legacy"
+
+
 class PaasClient(C2Client):
 
     url_key = "PAAS_URL"

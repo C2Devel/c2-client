@@ -242,3 +242,9 @@ class Route53Client(C2Client):
 
     url_key = "ROUTE53_URL"
     client_name = "route53"
+
+
+class DirectConnectClient(C2Client):
+
+    url_key = "DIRECT_CONNECT_URL"
+    client_name = "directconnect"

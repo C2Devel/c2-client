@@ -275,3 +275,9 @@ class IAMClient(C2Client):
     url_key = "IAM_URL"
     client_name = "iam"
     use_base_access_key = True
+
+
+class DirectConnectClient(C2Client):
+
+    url_key = "DIRECT_CONNECT_URL"
+    client_name = "directconnect"

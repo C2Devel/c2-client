@@ -31,6 +31,8 @@ def exitcode(func: callable):
     def wrapper(*args, **kwargs):
         try:
             func(*args, **kwargs)
+        except boto.exception.BotoServerError as error:
+            return f"{error.error_code}: {error.message}"
         except Exception as e:
             return e
     return wrapper

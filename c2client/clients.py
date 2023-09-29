@@ -159,7 +159,7 @@ class C2Client(BaseClient):
         result.pop("ResponseMetadata", None)
 
         # default=str is required for serializing Datetime objects
-        return json.dumps(result, indent=4, sort_keys=True, default=str)
+        return json.dumps(result, indent=4, default=str)
 
 
 class EC2Client(C2ClientLegacy):

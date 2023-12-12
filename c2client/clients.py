@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import re
 import ssl
 from abc import abstractmethod
 from functools import wraps
@@ -144,11 +145,19 @@ class C2Client(BaseClient):
         )
 
     @classmethod
+    def is_conversion_needed(cls, argument_name: str) -> bool:
+        """Check whether type conversion is needed for argument."""
+
+        return True
+
+    @classmethod
     def make_request(cls, method: str, arguments: dict, verify: bool):
 
         client = cls.get_client(verify)
 
         for key, value in arguments.items():
+            if not cls.is_conversion_needed(key):
+                continue
             if value.isdigit():
                 arguments[key] = int(value)
             elif value.lower() == "true":
@@ -208,6 +217,18 @@ class ASClient(C2Client):
 
     url_key = "AUTO_SCALING_URL"
     client_name = "autoscaling"
+
+    @classmethod
+    def is_conversion_needed(cls, argument_name: str) -> bool:
+        """Check whether type conversion is needed for argument."""
+
+        patterns = (
+            r"Filters\.\d+\.Values\.\d+",
+        )
+        for pattern in patterns:
+            if re.fullmatch(pattern, argument_name):
+                return False
+        return True
 
 
 class BSClient(C2Client):

@@ -1,28 +1,18 @@
 import argparse
 import json
-import os
 import re
 import ssl
 from abc import abstractmethod
 from functools import wraps
 from typing import Dict
-from urllib.parse import urlparse
 
-import boto
-import boto.cloudtrail.layer1
-import boto.ec2
-import boto.ec2.cloudwatch
 import boto3
 import inflection
-from boto.ec2.regioninfo import RegionInfo
 
-from c2client.utils import from_dot_notation, get_env_var, prettify_xml
+from c2client.utils import from_dot_notation, get_env_var
 
 
 ssl._create_default_https_context = ssl._create_unverified_context
-
-if os.environ.get("DEBUG"):
-    boto.set_stream_logger("c2")
 
 
 def exitcode(func: callable):
@@ -32,9 +22,6 @@ def exitcode(func: callable):
     def wrapper(*args, **kwargs):
         try:
             func(*args, **kwargs)
-        except boto.exception.BotoServerError as error:
-            error_code = error.error_code or error.body.get("__type")
-            return f"{error_code}: {error.message}"
         except Exception as e:
             return e
     return wrapper
@@ -92,38 +79,6 @@ class BaseClient:
         response = cls.make_request(action, arguments, verify)
 
         print(response)
-
-
-class C2ClientLegacy(BaseClient):
-
-    connection_class: type
-
-    @classmethod
-    def get_client(cls, verify: bool):
-        """Return boto connection."""
-
-        if not boto.config.has_section("Boto"):
-            boto.config.add_section("Boto")
-        boto.config.set("Boto", "is_secure", "True")
-        boto.config.set("Boto", "num_retries", "0")
-        boto.config.set("Boto", "https_validate_certificates", str(verify))
-
-        parsed_endpoint = urlparse(get_env_var(cls.url_key))
-
-        return cls.connection_class(
-            port=parsed_endpoint.port,
-            path=parsed_endpoint.path,
-            region=RegionInfo(name=parsed_endpoint.hostname, endpoint=parsed_endpoint.hostname),
-            is_secure=False,
-        )
-
-    @classmethod
-    def make_request(cls, method: str, arguments: dict, verify: bool):
-
-        connection = cls.get_client(verify)
-        response = connection.make_request(method, arguments)
-
-        return prettify_xml(response.read())
 
 
 class C2Client(BaseClient):
@@ -185,13 +140,13 @@ class EC2Client(C2Client):
 class CWClient(C2Client):
 
     url_key = "AWS_CLOUDWATCH_URL"
-    client_name = "cw"
+    client_name = "cloudwatch"
 
 
 class CTClient(C2Client):
 
     url_key = "AWS_CLOUDTRAIL_URL"
-    client_name = "ct"
+    client_name = "cloudtrail"
 
     @classmethod
     def make_request(cls, method: str, arguments: dict, verify: bool):

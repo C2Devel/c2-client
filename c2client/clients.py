@@ -176,33 +176,27 @@ class C2Client(BaseClient):
         return json.dumps(result, indent=4, default=str)
 
 
-class EC2Client(C2ClientLegacy):
+class EC2Client(C2Client):
 
     url_key = "EC2_URL"
     client_name = "ec2"
 
-    connection_class = boto.ec2.EC2Connection
 
-
-class CWClient(C2ClientLegacy):
+class CWClient(C2Client):
 
     url_key = "AWS_CLOUDWATCH_URL"
     client_name = "cw"
 
-    connection_class = boto.ec2.cloudwatch.CloudWatchConnection
 
-
-class CTClient(C2ClientLegacy):
+class CTClient(C2Client):
 
     url_key = "AWS_CLOUDTRAIL_URL"
     client_name = "ct"
 
-    connection_class = boto.cloudtrail.layer1.CloudTrailConnection
-
     @classmethod
     def make_request(cls, method: str, arguments: dict, verify: bool):
 
-        connection = cls.get_client(verify)
+        client = cls.get_client(verify)
 
         if "MaxResults" in arguments:
             arguments["MaxResults"] = int(arguments["MaxResults"])
@@ -211,9 +205,11 @@ class CTClient(C2ClientLegacy):
         if "EndTime" in arguments:
             arguments["EndTime"] = int(arguments["EndTime"])
 
-        response = connection.make_request(method, json.dumps(from_dot_notation(arguments)))
+        result = getattr(client, inflection.underscore(method))(**from_dot_notation(arguments))
 
-        return json.dumps(response, indent=4, sort_keys=True)
+        result.pop("ResponseMetadata", None)
+
+        return json.dumps(result, indent=4, sort_keys=True)
 
 
 class ASClient(C2Client):

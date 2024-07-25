@@ -14,9 +14,9 @@ import boto.ec2
 import boto.ec2.cloudwatch
 import boto3
 import inflection
-from boto.ec2.regioninfo import RegionInfo
+from boto.regioninfo import RegionInfo
 
-from c2client.utils import from_dot_notation, get_env_var, prettify_xml
+from c2client.utils import from_dot_notation, get_env_var, prettify_xml, convert_args
 
 
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -156,17 +156,11 @@ class C2Client(BaseClient):
 
         client = cls.get_client(verify)
 
-        for key, value in arguments.items():
-            if not cls.is_conversion_needed(key):
-                continue
-            if value.isdigit():
-                arguments[key] = int(value)
-            elif value.lower() == "true":
-                arguments[key] = True
-            elif value.lower() == "false":
-                arguments[key] = False
+        if arguments:
+            shape = client.meta.service_model.operation_model(method).input_shape
+            arguments = convert_args(from_dot_notation(arguments), shape)
 
-        result = getattr(client, inflection.underscore(method))(**from_dot_notation(arguments))
+        result = getattr(client, inflection.underscore(method))(**arguments)
 
         result.pop("ResponseMetadata", None)
 

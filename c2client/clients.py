@@ -1,6 +1,5 @@
 import argparse
 import json
-import re
 import ssl
 from abc import abstractmethod
 from functools import wraps
@@ -9,7 +8,7 @@ from typing import Dict
 import boto3
 import inflection
 
-from c2client.utils import from_dot_notation, get_env_var
+from c2client.utils import from_dot_notation, get_env_var, convert_args
 
 
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -103,27 +102,15 @@ class C2Client(BaseClient):
         )
 
     @classmethod
-    def is_conversion_needed(cls, argument_name: str) -> bool:
-        """Check whether type conversion is needed for argument."""
-
-        return True
-
-    @classmethod
     def make_request(cls, method: str, arguments: dict, verify: bool):
 
         client = cls.get_client(verify)
 
-        for key, value in arguments.items():
-            if not cls.is_conversion_needed(key):
-                continue
-            if value.isdigit():
-                arguments[key] = int(value)
-            elif value.lower() == "true":
-                arguments[key] = True
-            elif value.lower() == "false":
-                arguments[key] = False
+        if arguments:
+            shape = client.meta.service_model.operation_model(method).input_shape
+            arguments = convert_args(from_dot_notation(arguments), shape)
 
-        result = getattr(client, inflection.underscore(method))(**from_dot_notation(arguments))
+        result = getattr(client, inflection.underscore(method))(**arguments)
 
         result.pop("ResponseMetadata", None)
 
@@ -148,41 +135,11 @@ class CTClient(C2Client):
     url_key = "AWS_CLOUDTRAIL_URL"
     client_name = "cloudtrail"
 
-    @classmethod
-    def make_request(cls, method: str, arguments: dict, verify: bool):
-
-        client = cls.get_client(verify)
-
-        if "MaxResults" in arguments:
-            arguments["MaxResults"] = int(arguments["MaxResults"])
-        if "StartTime" in arguments:
-            arguments["StartTime"] = int(arguments["StartTime"])
-        if "EndTime" in arguments:
-            arguments["EndTime"] = int(arguments["EndTime"])
-
-        result = getattr(client, inflection.underscore(method))(**from_dot_notation(arguments))
-
-        result.pop("ResponseMetadata", None)
-
-        return json.dumps(result, indent=4, sort_keys=True)
-
 
 class ASClient(C2Client):
 
     url_key = "AUTO_SCALING_URL"
     client_name = "autoscaling"
-
-    @classmethod
-    def is_conversion_needed(cls, argument_name: str) -> bool:
-        """Check whether type conversion is needed for argument."""
-
-        patterns = (
-            r"Filters\.\d+\.Values\.\d+",
-        )
-        for pattern in patterns:
-            if re.fullmatch(pattern, argument_name):
-                return False
-        return True
 
 
 class BSClient(C2Client):

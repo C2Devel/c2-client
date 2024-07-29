@@ -1,5 +1,6 @@
 import argparse
 import json
+import re
 import ssl
 from abc import abstractmethod
 from functools import wraps
@@ -107,6 +108,7 @@ class C2Client(BaseClient):
         client = cls.get_client(verify)
 
         if arguments:
+            arguments = cls.convert_arg_fields_legacy(arguments)
             shape = client.meta.service_model.operation_model(method).input_shape
             arguments = convert_args(from_dot_notation(arguments), shape)
 
@@ -117,17 +119,59 @@ class C2Client(BaseClient):
         # default=str is required for serializing Datetime objects
         return json.dumps(result, indent=4, default=str)
 
+    @staticmethod
+    def convert_arg_fields_legacy(arguments: dict):
+        """Convert field names to match the documentation.
+        TODO: delete after the documentation has been updated.
+        """
+
+        return arguments
+
 
 class EC2Client(C2Client):
 
     url_key = "EC2_URL"
     client_name = "ec2"
 
+    @staticmethod
+    def convert_arg_fields_legacy(arguments: dict):
+        """Convert Value field names."""
+
+        tag_pattern = r"Filter\.\d+\.Value"
+
+        new_arguments = {}
+        filters = {}
+        for key, value in arguments.items():
+            new_key = key
+            if re.fullmatch(tag_pattern, key):
+                key = ".".join(key.split(".")[:3])
+
+                if key in filters:
+                    filters[key] += 1
+                else:
+                    filters[key] = 1
+
+                new_key = f"{key}s.{filters[key]}"
+
+            new_arguments[new_key] = value
+
+        return new_arguments
+
 
 class CWClient(C2Client):
 
     url_key = "AWS_CLOUDWATCH_URL"
     client_name = "cloudwatch"
+
+    @staticmethod
+    def convert_arg_fields_legacy(arguments: dict):
+        """Delete a substring from a field name."""
+
+        new_arguments = {}
+        for key, value in arguments.items():
+            new_key = key.replace(".member.", ".")
+            new_arguments[new_key] = value
+        return new_arguments
 
 
 class CTClient(C2Client):

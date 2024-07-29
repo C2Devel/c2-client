@@ -69,6 +69,11 @@ def convert_args(params: Any, shape: Shape):
         if param_name in shape.members:
             member_shape = shape.members[param_name]
             converted_params[param_name] = convert_arg(param_value, member_shape)
+        elif f"{param_name}s" in shape.members:
+            # NOTE:  use the plural when looking for the shape of parameter
+            param_name = f"{param_name}s"
+            member_shape = shape.members[param_name]
+            converted_params[param_name] = convert_arg(param_value, member_shape)
         else:
             converted_params[param_name] = param_value
 

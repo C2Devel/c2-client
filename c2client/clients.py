@@ -146,12 +146,6 @@ class C2Client(BaseClient):
         )
 
     @classmethod
-    def is_conversion_needed(cls, argument_name: str) -> bool:
-        """Check whether type conversion is needed for argument."""
-
-        return True
-
-    @classmethod
     def make_request(cls, method: str, arguments: dict, verify: bool):
 
         client = cls.get_client(verify)
@@ -191,39 +185,11 @@ class CTClient(C2ClientLegacy):
 
     connection_class = boto.cloudtrail.layer1.CloudTrailConnection
 
-    @classmethod
-    def make_request(cls, method: str, arguments: dict, verify: bool):
-
-        connection = cls.get_client(verify)
-
-        if "MaxResults" in arguments:
-            arguments["MaxResults"] = int(arguments["MaxResults"])
-        if "StartTime" in arguments:
-            arguments["StartTime"] = int(arguments["StartTime"])
-        if "EndTime" in arguments:
-            arguments["EndTime"] = int(arguments["EndTime"])
-
-        response = connection.make_request(method, json.dumps(from_dot_notation(arguments)))
-
-        return json.dumps(response, indent=4, sort_keys=True)
-
 
 class ASClient(C2Client):
 
     url_key = "AUTO_SCALING_URL"
     client_name = "autoscaling"
-
-    @classmethod
-    def is_conversion_needed(cls, argument_name: str) -> bool:
-        """Check whether type conversion is needed for argument."""
-
-        patterns = (
-            r"Filters\.\d+\.Values\.\d+",
-        )
-        for pattern in patterns:
-            if re.fullmatch(pattern, argument_name):
-                return False
-        return True
 
 
 class BSClient(C2Client):

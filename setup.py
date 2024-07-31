@@ -32,6 +32,7 @@ entrypoints = [
     ("c2-elb", "ELBClient"),
     ("c2-paas", "PaasClient"),
     ("c2-route53", "Route53Client"),
+    ("c2-dc", "DirectConnectClient"),
 ]
 
 setup(

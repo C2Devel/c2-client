@@ -1,5 +1,5 @@
 import os
-from typing import Any
+from typing import Any, OrderedDict, Optional, Tuple
 
 from botocore.model import ListShape, StructureShape, Shape
 
@@ -57,6 +57,17 @@ def get_env_var(name):
     return env_var
 
 
+def get_member_shape(name: str, members: OrderedDict) -> Tuple[Optional[Shape], str]:
+    """Get API schemes for a parameter by its name."""
+
+    for key in members:
+        if key == name:
+            return members[key], name
+        elif name == members[key].serialization.get("name"):
+            return members[key], key
+    return None, name
+
+
 def convert_args(params: Any, shape: Shape):
     """Converts values in the params dictionary to the types expected by shape."""
 
@@ -66,13 +77,8 @@ def convert_args(params: Any, shape: Shape):
     converted_params = {}
 
     for param_name, param_value in params.items():
-        if param_name in shape.members:
-            member_shape = shape.members[param_name]
-            converted_params[param_name] = convert_arg(param_value, member_shape)
-        elif f"{param_name}s" in shape.members:
-            # NOTE:  use the plural when looking for the shape of parameter
-            param_name = f"{param_name}s"
-            member_shape = shape.members[param_name]
+        member_shape, param_name = get_member_shape(param_name, shape.members)
+        if member_shape:
             converted_params[param_name] = convert_arg(param_value, member_shape)
         else:
             converted_params[param_name] = param_value

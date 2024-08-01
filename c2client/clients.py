@@ -106,7 +106,7 @@ class C2Client(BaseClient):
         client = cls.get_client(verify)
 
         if arguments:
-            arguments = cls.convert_arg_fields_legacy(arguments)
+            arguments = cls.convert_fields_names(arguments)
             shape = client.meta.service_model.operation_model(method).input_shape
             arguments = convert_args(from_dot_notation(arguments), shape)
 
@@ -118,10 +118,8 @@ class C2Client(BaseClient):
         return json.dumps(result, indent=4, default=str)
 
     @staticmethod
-    def convert_arg_fields_legacy(arguments: dict):
-        """Convert field names to match the documentation.
-        TODO: delete after the documentation has been updated.
-        """
+    def convert_fields_names(arguments: dict):
+        """Convert field names as in the documentation."""
 
         return arguments
 
@@ -132,8 +130,8 @@ class EC2Client(C2Client):
     client_name = "ec2"
 
     @staticmethod
-    def convert_arg_fields_legacy(arguments: dict):
-        """Convert Value field names."""
+    def convert_fields_names(arguments: dict):
+        """Convert field names as in the documentation."""
 
         tag_pattern = r"Filter\.\d+\.Value"
 
@@ -149,7 +147,7 @@ class EC2Client(C2Client):
                 else:
                     filters[key] = 1
 
-                new_key = f"{key}s.{filters[key]}"
+                new_key = f"{key}.{filters[key]}"
 
             new_arguments[new_key] = value
 
@@ -162,8 +160,8 @@ class CWClient(C2Client):
     client_name = "cloudwatch"
 
     @staticmethod
-    def convert_arg_fields_legacy(arguments: dict):
-        """Delete a substring from a field name."""
+    def convert_fields_names(arguments: dict):
+        """Convert field names as in the documentation."""
 
         new_arguments = {}
         for key, value in arguments.items():

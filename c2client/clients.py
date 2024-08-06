@@ -74,6 +74,7 @@ class BaseClient:
 
     url_key: str
     client_name: str
+    use_base_access_key: bool = False
 
     @classmethod
     @abstractmethod
@@ -134,11 +135,12 @@ class C2Client(BaseClient):
         endpoint = get_env_var(cls.url_key)
 
         aws_access_key_id = get_env_var("AWS_ACCESS_KEY_ID")
+        base_access_key = get_env_var("BASE_ACCESS_KEY")
         aws_secret_access_key = get_env_var("AWS_SECRET_ACCESS_KEY")
 
         return boto3.client(
             cls.client_name,
-            aws_access_key_id=aws_access_key_id,
+            aws_access_key_id=base_access_key if cls.use_base_access_key else aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
             region_name="croc",
             endpoint_url=endpoint,
@@ -266,3 +268,10 @@ class Route53Client(C2Client):
 
     url_key = "ROUTE53_URL"
     client_name = "route53"
+
+
+class IAMClient(C2Client):
+
+    url_key = "IAM_URL"
+    client_name = "iam"
+    use_base_access_key = True

@@ -30,6 +30,7 @@ entrypoints = [
     ("c2-eks", "EKSClient"),
     ("c2-eks-legacy", "LegacyEKSClient"),
     ("c2-elb", "ELBClient"),
+    ("c2-iam", "IAMClient"),
     ("c2-paas", "PaasClient"),
     ("c2-route53", "Route53Client"),
 ]

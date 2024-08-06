@@ -1,16 +1,9 @@
 import os
+from typing import Any, OrderedDict, Optional, Tuple
 
-from lxml import etree
+from botocore.model import ListShape, StructureShape, Shape
 
 from c2client.errors import EnvironmentVariableError, MalformedParametersError
-
-
-def prettify_xml(string):
-    """Returns prettified XML string."""
-
-    parser = etree.XMLParser(remove_blank_text=True)
-    tree = etree.fromstring(string, parser)
-    return etree.tostring(tree, pretty_print=True, encoding="unicode")
 
 
 def from_dot_notation(source):
@@ -62,3 +55,62 @@ def get_env_var(name):
     if env_var is None:
         raise EnvironmentVariableError(name)
     return env_var
+
+
+def get_member_shape(name: str, members: OrderedDict) -> Tuple[Optional[Shape], str]:
+    """Get API schemes for a parameter by its name."""
+
+    for key in members:
+        if key == name:
+            return members[key], name
+        elif name == members[key].serialization.get("name"):
+            return members[key], key
+    return None, name
+
+
+def convert_args(params: Any, shape: Shape):
+    """Converts values in the params dictionary to the types expected by shape."""
+
+    if not isinstance(shape, StructureShape):
+        return convert_arg(value=params, shape=shape)
+
+    converted_params = {}
+
+    for param_name, param_value in params.items():
+        member_shape, param_name = get_member_shape(param_name, shape.members)
+        if member_shape:
+            converted_params[param_name] = convert_arg(param_value, member_shape)
+        else:
+            converted_params[param_name] = param_value
+
+    return converted_params
+
+
+def convert_arg(value: Any, shape: Shape):
+    """Converts an individual value to the type expected by shape."""
+
+    if isinstance(shape, ListShape):
+        if not isinstance(value, list):
+            raise ValueError(f"Expected list for {shape.name}, got {type(value).__name__}")
+        return [convert_arg(v, shape.member) for v in value]
+
+    elif isinstance(shape, StructureShape):
+        if not isinstance(value, dict):
+            raise ValueError(f"Expected dict for {shape.name}, got {type(value).__name__}")
+        return convert_args(value, shape)
+
+    elif shape.type_name == 'string':
+        return str(value)
+
+    elif shape.type_name == 'integer' or shape.type_name == "long":
+        return int(value)
+
+    elif shape.type_name == 'float' or shape.type_name == "double":
+        return float(value)
+
+    elif shape.type_name == 'boolean':
+        if isinstance(value, str) and value.lower() == 'false':
+            return False
+        return bool(value)
+    else:
+        return value

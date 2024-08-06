@@ -14,7 +14,6 @@ def get_description():
 
 
 install_requires = [
-    "boto",
     "boto3",
     "botocore",
     "inflection==0.3.1",

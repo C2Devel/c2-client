@@ -270,6 +270,12 @@ class Route53Client(C2Client):
     client_name = "route53"
 
 
+class EFSClient(C2Client):
+
+    url_key = "EFS_URL"
+    client_name = "efs"
+
+
 class IAMClient(C2Client):
 
     url_key = "IAM_URL"

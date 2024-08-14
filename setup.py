@@ -27,6 +27,7 @@ entrypoints = [
     ("c2-ct", "CTClient"),
     ("c2-cw", "CWClient"),
     ("c2-ec2", "EC2Client"),
+    ("c2-efs", "EFSClient"),
     ("c2-eks", "EKSClient"),
     ("c2-eks-legacy", "LegacyEKSClient"),
     ("c2-elb", "ELBClient"),

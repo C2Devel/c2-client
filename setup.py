@@ -17,7 +17,6 @@ install_requires = [
     "boto3",
     "botocore",
     "inflection==0.3.1",
-    "lxml",
 ]
 
 entrypoints = [

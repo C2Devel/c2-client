@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 from botocore.model import ListShape, StructureShape, Shape
 
-from c2client.errors import EnvironmentVariableError, MalformedParametersError
+from c2client.errors import EnvironmentVariableError, MalformedParametersError, InvalidParameterName
 
 
 @dataclasses.dataclass
@@ -70,14 +70,15 @@ def get_env_var(name: str) -> Any:
 def collect_param_shapes(shape: Shape) -> Dict[str, Parameter]:
     """Collect a dict of API schema parameters by their name or serialization name."""
 
-    member_shapes = {}
-    for member in shape.members:
-        member_shapes[member] = Parameter(name=member, shape=shape.members[member])
-        if shape.members[member].serialization.get("name"):
-            member_shapes[shape.members[member].serialization.get("name")] = Parameter(
-                name=member, shape=shape.members[member])
+    param_shapes = {}
+    for member_name in shape.members:
+        param_shapes[member_name.lower()] = Parameter(
+            name=member_name, shape=shape.members[member_name])
+        if shape.members[member_name].serialization.get("name"):
+            param_shapes[shape.members[member_name].serialization.get("name").lower()] = Parameter(
+                name=member_name, shape=shape.members[member_name])
 
-    return member_shapes
+    return param_shapes
 
 
 def convert_args(params: Any, shape: Shape):
@@ -90,7 +91,11 @@ def convert_args(params: Any, shape: Shape):
     param_shapes = collect_param_shapes(shape)
 
     for param_name, param_value in params.items():
-        parameter = param_shapes.get(param_name)
+        parameter = param_shapes.get(param_name.lower())
+
+        if not parameter:
+            raise InvalidParameterName(param_name)
+
         if parameter.shape:
             converted_params[parameter.name] = convert_arg(param_value, parameter.shape)
         else:

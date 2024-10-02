@@ -6,3 +6,4 @@ rpms/
 *.egg-info/
 *.tar.gz
 *.rpm
+__pycache__

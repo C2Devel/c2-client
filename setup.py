@@ -14,11 +14,9 @@ def get_description():
 
 
 install_requires = [
-    "boto",
-    "boto3",
-    "botocore",
+    "boto3 @ git+https://github.com/C2Devel/boto3.git@develop#egg=boto3",
+    "botocore @ git+https://github.com/C2Devel/botocore.git@develop#egg=botocore",
     "inflection==0.3.1",
-    "lxml",
 ]
 
 entrypoints = [
@@ -49,12 +47,19 @@ setup(
     maintainer="Andrey Kulaev",
     maintainer_email="adkulaev@gmail.com",
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     install_requires=install_requires,
     packages=find_packages(),

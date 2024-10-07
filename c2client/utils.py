@@ -1,20 +1,22 @@
+import dataclasses
 import os
+from typing import Any, Dict
 
-from lxml import etree
+from botocore.model import ListShape, StructureShape, Shape
 
-from c2client.errors import EnvironmentVariableError, MalformedParametersError
+from c2client.errors import EnvironmentVariableError, MalformedParametersError, InvalidParameterName
 
 
-def prettify_xml(string):
-    """Returns prettified XML string."""
+@dataclasses.dataclass
+class Parameter:
+    """API parameter info."""
 
-    parser = etree.XMLParser(remove_blank_text=True)
-    tree = etree.fromstring(string, parser)
-    return etree.tostring(tree, pretty_print=True, encoding="unicode")
+    name: str
+    shape: Shape
 
 
 def from_dot_notation(source):
-    """Converts a incoming query to a request dictionary.
+    """Convert a incoming query to a request dictionary.
     For example::
         1. {"Action": ["Action"], "Param": ["Value"]}
         2. {"Action": ["Action"], "Param.2": ["Value2"], "Param.1": ["Value1"]}
@@ -26,6 +28,7 @@ def from_dot_notation(source):
     :type query: dict
     :param query: This is dictionary, returned by '_get_query()'.
     """
+
     result = {"result": {}}
     for key, value in sorted(source.items()):
         try:
@@ -55,10 +58,77 @@ def _process_tokens(tokens, value, parent, index):
         parent[index][key] = value
 
 
-def get_env_var(name):
-    """Returns env_var by it's name or raises EnvironmentError."""
+def get_env_var(name: str) -> Any:
+    """Return env_var by it's name or raises EnvironmentError."""
 
     env_var = os.environ.get(name)
     if env_var is None:
         raise EnvironmentVariableError(name)
     return env_var
+
+
+def collect_param_shapes(shape: Shape) -> Dict[str, Parameter]:
+    """Collect a dict of API schema parameters by their name or serialization name."""
+
+    param_shapes = {}
+    for member_name in shape.members:
+        param_shapes[member_name.lower()] = Parameter(
+            name=member_name, shape=shape.members[member_name])
+        if shape.members[member_name].serialization.get("name"):
+            param_shapes[shape.members[member_name].serialization.get("name").lower()] = Parameter(
+                name=member_name, shape=shape.members[member_name])
+
+    return param_shapes
+
+
+def convert_args(params: Any, shape: Shape):
+    """Convert values in the params dictionary to the types expected by shape."""
+
+    if not isinstance(shape, StructureShape):
+        return convert_arg(value=params, shape=shape)
+
+    converted_params = {}
+    param_shapes = collect_param_shapes(shape)
+
+    for param_name, param_value in params.items():
+        parameter = param_shapes.get(param_name.lower())
+
+        if not parameter:
+            raise InvalidParameterName(param_name)
+
+        if parameter.shape:
+            converted_params[parameter.name] = convert_arg(param_value, parameter.shape)
+        else:
+            converted_params[parameter.name] = param_value
+
+    return converted_params
+
+
+def convert_arg(value: Any, shape: Shape):
+    """Convert an individual value to the type expected by shape."""
+
+    if isinstance(shape, ListShape):
+        if not isinstance(value, list):
+            raise ValueError(f"Expected list for {shape.name}, got {type(value).__name__}")
+        return [convert_arg(v, shape.member) for v in value]
+
+    elif isinstance(shape, StructureShape):
+        if not isinstance(value, dict):
+            raise ValueError(f"Expected dict for {shape.name}, got {type(value).__name__}")
+        return convert_args(value, shape)
+
+    elif shape.type_name == "string":
+        return str(value)
+
+    elif shape.type_name == "integer" or shape.type_name == "long":
+        return int(value)
+
+    elif shape.type_name == "float" or shape.type_name == "double":
+        return float(value)
+
+    elif shape.type_name == "boolean":
+        if isinstance(value, str) and value.lower() == "false":
+            return False
+        return bool(value)
+    else:
+        return value

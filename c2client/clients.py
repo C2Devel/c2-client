@@ -1,28 +1,19 @@
 import argparse
 import json
-import os
 import re
 import ssl
 from abc import abstractmethod
 from functools import wraps
-from typing import Dict
-from urllib.parse import urlparse
+from typing import Any, Dict, Optional
 
-import boto
-import boto.cloudtrail.layer1
-import boto.ec2
-import boto.ec2.cloudwatch
 import boto3
 import inflection
-from boto.ec2.regioninfo import RegionInfo
 
-from c2client.utils import from_dot_notation, get_env_var, prettify_xml
+from c2client.errors import InvalidMethodName
+from c2client.utils import from_dot_notation, get_env_var, convert_args
 
 
 ssl._create_default_https_context = ssl._create_unverified_context
-
-if os.environ.get("DEBUG"):
-    boto.set_stream_logger("c2")
 
 
 def exitcode(func: callable):
@@ -32,9 +23,6 @@ def exitcode(func: callable):
     def wrapper(*args, **kwargs):
         try:
             func(*args, **kwargs)
-        except boto.exception.BotoServerError as error:
-            error_code = error.error_code or error.body.get("__type")
-            return f"{error_code}: {error.message}"
         except Exception as e:
             return e
     return wrapper
@@ -94,38 +82,6 @@ class BaseClient:
         print(response)
 
 
-class C2ClientLegacy(BaseClient):
-
-    connection_class: type
-
-    @classmethod
-    def get_client(cls, verify: bool):
-        """Return boto connection."""
-
-        if not boto.config.has_section("Boto"):
-            boto.config.add_section("Boto")
-        boto.config.set("Boto", "is_secure", "True")
-        boto.config.set("Boto", "num_retries", "0")
-        boto.config.set("Boto", "https_validate_certificates", str(verify))
-
-        parsed_endpoint = urlparse(get_env_var(cls.url_key))
-
-        return cls.connection_class(
-            port=parsed_endpoint.port,
-            path=parsed_endpoint.path,
-            region=RegionInfo(name=parsed_endpoint.hostname, endpoint=parsed_endpoint.hostname),
-            is_secure=False,
-        )
-
-    @classmethod
-    def make_request(cls, method: str, arguments: dict, verify: bool):
-
-        connection = cls.get_client(verify)
-        response = connection.make_request(method, arguments)
-
-        return prettify_xml(response.read())
-
-
 class C2Client(BaseClient):
 
     @classmethod
@@ -148,90 +104,88 @@ class C2Client(BaseClient):
         )
 
     @classmethod
-    def is_conversion_needed(cls, argument_name: str) -> bool:
-        """Check whether type conversion is needed for argument."""
-
-        return True
-
-    @classmethod
-    def make_request(cls, method: str, arguments: dict, verify: bool):
+    def make_request(cls, method: str, arguments: Optional[Dict], verify: bool) -> str:
 
         client = cls.get_client(verify)
 
-        for key, value in arguments.items():
-            if not cls.is_conversion_needed(key):
-                continue
-            if value.isdigit():
-                arguments[key] = int(value)
-            elif value.lower() == "true":
-                arguments[key] = True
-            elif value.lower() == "false":
-                arguments[key] = False
+        if not hasattr(client, inflection.underscore(method)):
+            raise InvalidMethodName(method)
 
-        result = getattr(client, inflection.underscore(method))(**from_dot_notation(arguments))
+        if arguments:
+            arguments = cls.convert_fields_names(arguments)
+            shape = client.meta.service_model.operation_model(method).input_shape
+            arguments = convert_args(from_dot_notation(arguments), shape)
+
+        result = getattr(client, inflection.underscore(method))(**arguments)
 
         result.pop("ResponseMetadata", None)
 
         # default=str is required for serializing Datetime objects
         return json.dumps(result, indent=4, default=str)
 
+    @staticmethod
+    def convert_fields_names(arguments: dict) -> Dict[str, Any]:
+        """Convert field names as in the documentation."""
 
-class EC2Client(C2ClientLegacy):
+        return arguments
+
+
+class EC2Client(C2Client):
 
     url_key = "EC2_URL"
     client_name = "ec2"
 
-    connection_class = boto.ec2.EC2Connection
+    @staticmethod
+    def convert_fields_names(arguments: dict) -> Dict[str, Any]:
+        """Convert field names as in the documentation."""
+
+        tag_pattern = r"Filter\.\d+\.Value"
+
+        new_arguments = {}
+        filters = {}
+        for key, value in arguments.items():
+            new_key = key
+            if re.fullmatch(tag_pattern, key):
+                key = ".".join(key.split(".")[:3])
+
+                if key in filters:
+                    filters[key] += 1
+                else:
+                    filters[key] = 1
+
+                new_key = f"{key}.{filters[key]}"
+
+            new_arguments[new_key] = value
+
+        return new_arguments
 
 
-class CWClient(C2ClientLegacy):
+class CWClient(C2Client):
 
     url_key = "AWS_CLOUDWATCH_URL"
-    client_name = "cw"
+    client_name = "cloudwatch"
 
-    connection_class = boto.ec2.cloudwatch.CloudWatchConnection
+    @staticmethod
+    def convert_fields_names(arguments: dict) -> Dict[str, Any]:
+        """Convert field names as in the documentation."""
+
+        new_arguments = {}
+        for key, value in arguments.items():
+            new_key = key.replace(".member.", ".")
+            new_arguments[new_key] = value
+        return new_arguments
 
 
-class CTClient(C2ClientLegacy):
+class CTClient(C2Client):
 
     url_key = "AWS_CLOUDTRAIL_URL"
-    client_name = "ct"
-
-    connection_class = boto.cloudtrail.layer1.CloudTrailConnection
-
-    @classmethod
-    def make_request(cls, method: str, arguments: dict, verify: bool):
-
-        connection = cls.get_client(verify)
-
-        if "MaxResults" in arguments:
-            arguments["MaxResults"] = int(arguments["MaxResults"])
-        if "StartTime" in arguments:
-            arguments["StartTime"] = int(arguments["StartTime"])
-        if "EndTime" in arguments:
-            arguments["EndTime"] = int(arguments["EndTime"])
-
-        response = connection.make_request(method, json.dumps(from_dot_notation(arguments)))
-
-        return json.dumps(response, indent=4, sort_keys=True)
+    client_name = "cloudtrail"
 
 
 class ASClient(C2Client):
 
     url_key = "AUTO_SCALING_URL"
     client_name = "autoscaling"
-
-    @classmethod
-    def is_conversion_needed(cls, argument_name: str) -> bool:
-        """Check whether type conversion is needed for argument."""
-
-        patterns = (
-            r"Filters\.\d+\.Values\.\d+",
-        )
-        for pattern in patterns:
-            if re.fullmatch(pattern, argument_name):
-                return False
-        return True
 
 
 class BSClient(C2Client):

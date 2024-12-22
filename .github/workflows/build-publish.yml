@@ -50,6 +50,6 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           username: __token__
-          repository-url: https://pypi.org/legacy/
+          repository-url: https://pypi.org/
           password: ${{ secrets.PYPI_API_TOKEN }}
  

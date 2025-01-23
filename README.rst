@@ -1,7 +1,7 @@
-CROC Cloud API Client
+K2 Cloud API Client
 =====================
 
-Simple command-line utility for sending custom requests to CROC Cloud platform.
+Simple command-line utility for sending custom requests to K2 Cloud platform.
 
 **Warning: this utility is not intended for automation cases.
 Use https://github.com/c2devel/boto3.git and python scripts instead.**

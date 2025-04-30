@@ -35,6 +35,7 @@ entrypoints = [
     ("c2-rgt", "ResourceGroupsTaggingClient"),
     ("c2-route53", "Route53Client"),
     ("c2-kms", "KMSClient"),
+    ("c2-logs", "LogsClient"),
 ]
 
 setup(

@@ -104,7 +104,13 @@ class C2Client(BaseClient):
         )
 
     @classmethod
-    def make_request(cls, method: str, arguments: Optional[Dict], verify: bool) -> str:
+    def make_request(
+        cls,
+        method: str,
+        arguments: Optional[Dict],
+        verify: bool,
+        convert_to_str: bool = True
+    ) -> str:
 
         client = cls.get_client(verify)
 
@@ -118,10 +124,12 @@ class C2Client(BaseClient):
 
         result = getattr(client, inflection.underscore(method))(**arguments)
 
-        result.pop("ResponseMetadata", None)
+        if convert_to_str:
+            result.pop("ResponseMetadata", None)
 
-        # default=str is required for serializing Datetime objects
-        return json.dumps(result, indent=4, default=str)
+            # default=str is required for serializing Datetime objects
+            return json.dumps(result, indent=4, default=str)
+        return result
 
     @staticmethod
     def convert_fields_names(arguments: dict) -> Dict[str, Any]:
@@ -241,3 +249,21 @@ class DirectConnectClient(C2Client):
 
     url_key = "DIRECT_CONNECT_URL"
     client_name = "directconnect"
+
+
+class LogsClient(C2Client):
+
+    url_key = "CLOUDWATCH_LOGS_URL"
+    client_name = "logs"
+
+    @classmethod
+    @exitcode
+    def execute(cls) -> None:
+        action, arguments, verify = parse_arguments()
+        if action == "StartLiveTail":
+            result = super().make_request(action, arguments, verify, convert_to_str=False)
+            for event in result["responseStream"]:
+                print(f"Event: {event}")
+        else:
+            response = cls.make_request(action, arguments, verify)
+            print(response)

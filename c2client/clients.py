@@ -1,7 +1,9 @@
 import argparse
+import datetime
 import json
 import re
 import ssl
+import sys
 from abc import abstractmethod
 from functools import wraps
 from typing import Any, Dict, Optional
@@ -104,7 +106,13 @@ class C2Client(BaseClient):
         )
 
     @classmethod
-    def make_request(cls, method: str, arguments: Optional[Dict], verify: bool) -> str:
+    def make_request(
+        cls,
+        method: str,
+        arguments: Optional[Dict],
+        verify: bool,
+        convert_to_str: bool = True
+    ) -> str:
 
         client = cls.get_client(verify)
 
@@ -118,10 +126,12 @@ class C2Client(BaseClient):
 
         result = getattr(client, inflection.underscore(method))(**arguments)
 
-        result.pop("ResponseMetadata", None)
+        if convert_to_str:
+            result.pop("ResponseMetadata", None)
 
-        # default=str is required for serializing Datetime objects
-        return json.dumps(result, indent=4, default=str)
+            # default=str is required for serializing Datetime objects
+            return json.dumps(result, indent=4, default=str)
+        return result
 
     @staticmethod
     def convert_fields_names(arguments: dict) -> Dict[str, Any]:
@@ -241,3 +251,58 @@ class DirectConnectClient(C2Client):
 
     url_key = "DIRECT_CONNECT_URL"
     client_name = "directconnect"
+
+
+class LogsClient(C2Client):
+
+    url_key = "CLOUDWATCH_LOGS_URL"
+    client_name = "logs"
+
+    @classmethod
+    @exitcode
+    def execute(cls) -> None:
+        action, arguments, verify = parse_arguments()
+        if action == "StartLiveTail":
+            symbols = ["|", "/", "-", "\\"]
+            counter = 0
+
+            try:
+                resp = super().make_request(
+                    action, arguments, verify, convert_to_str=False
+                )
+                stream = resp["responseStream"]
+
+                skipped = False
+                got_logs = False
+
+                for item in stream:
+                    if not skipped and "sessionStart" in item:
+                        skipped = True
+                        continue
+
+                    if "sessionUpdate" in item:
+                        events = item["sessionUpdate"]["sessionResults"]
+                        if events:
+                            if not got_logs:
+                                got_logs = True
+                                print("\rLogs received:", " " * 8)
+
+                            for event in events:
+                                ts = datetime.datetime.fromtimestamp(
+                                    event.get("timestamp", 0) / 1_000
+                                )
+                                msg = event.get("message", "").strip()
+                                print(f"\r[{ts}] {msg}")
+
+                        sys.stdout.write(
+                            f"\rWaiting for logs... {symbols[counter % len(symbols)]}"
+                        )
+                        sys.stdout.flush()
+                        counter += 1
+                        sys.stdout.write("\r")
+
+            except KeyboardInterrupt:
+                print("\rReceiving events has been stopped.")
+        else:
+            response = cls.make_request(action, arguments, verify)
+            print(response)

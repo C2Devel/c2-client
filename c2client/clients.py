@@ -1,7 +1,9 @@
 import argparse
+import datetime
 import json
 import re
 import ssl
+import sys
 from abc import abstractmethod
 from functools import wraps
 from typing import Any, Dict, Optional
@@ -261,9 +263,46 @@ class LogsClient(C2Client):
     def execute(cls) -> None:
         action, arguments, verify = parse_arguments()
         if action == "StartLiveTail":
-            result = super().make_request(action, arguments, verify, convert_to_str=False)
-            for event in result["responseStream"]:
-                print(f"Event: {event}")
+            symbols = ["|", "/", "-", "\\"]
+            counter = 0
+
+            try:
+                resp = super().make_request(
+                    action, arguments, verify, convert_to_str=False
+                )
+                stream = resp["responseStream"]
+
+                skipped = False
+                got_logs = False
+
+                for item in stream:
+                    if not skipped and "sessionStart" in item:
+                        skipped = True
+                        continue
+
+                    if "sessionUpdate" in item:
+                        events = item["sessionUpdate"]["sessionResults"]
+                        if events:
+                            if not got_logs:
+                                got_logs = True
+                                print("\rLogs received:", " " * 8)
+
+                            for event in events:
+                                ts = datetime.datetime.fromtimestamp(
+                                    event.get("timestamp", 0) / 1_000
+                                )
+                                msg = event.get("message", "").strip()
+                                print(f"\r[{ts}] {msg}")
+
+                        sys.stdout.write(
+                            f"\rWaiting for logs... {symbols[counter % len(symbols)]}"
+                        )
+                        sys.stdout.flush()
+                        counter += 1
+                        sys.stdout.write("\r")
+
+            except KeyboardInterrupt:
+                print("\rReceiving events has been stopped.")
         else:
             response = cls.make_request(action, arguments, verify)
             print(response)

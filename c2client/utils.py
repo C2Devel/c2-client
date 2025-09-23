@@ -4,7 +4,12 @@ from typing import Any, Dict
 
 from botocore.model import ListShape, StructureShape, Shape
 
-from c2client.errors import EnvironmentVariableError, MalformedParametersError, InvalidParameterName
+from c2client.errors import (
+    EnvironmentVariableError,
+    MalformedParametersError,
+    InvalidParameterName,
+    InvalidListIndex,
+)
 
 
 @dataclasses.dataclass
@@ -31,10 +36,7 @@ def from_dot_notation(source):
 
     result = {"result": {}}
     for key, value in sorted(source.items()):
-        try:
-            _process_tokens(key.split("."), value, result, "result")
-        except Exception:
-            raise MalformedParametersError
+        _process_tokens(key.split("."), value, result, "result")
     return result["result"]
 
 
@@ -42,6 +44,8 @@ def _process_tokens(tokens, value, parent, index):
     key, rest = tokens[0], tokens[1:]
     if key.isdigit():
         key = int(key) - 1
+        if key == -1:
+            raise InvalidListIndex(0)
 
     if not isinstance(key, int):
         parent[index].setdefault(key, {})

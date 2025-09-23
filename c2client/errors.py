@@ -20,3 +20,8 @@ class InvalidParameterName(Exception):
 class InvalidMethodName(Exception):
     def __init__(self, method_name: str) -> None:
         super().__init__(f"Not found method by name: {method_name}.")
+
+
+class InvalidListIndex(Exception):
+    def __init__(self, index: int) -> None:
+        super().__init__(f"The list's indices start at 1, and {index} is outside that range.")

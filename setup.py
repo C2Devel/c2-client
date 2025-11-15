@@ -33,6 +33,7 @@ entrypoints = [
     ("c2-paas", "PaasClient"),
     ("c2-route53", "Route53Client"),
     ("c2-dc", "DirectConnectClient"),
+    ("c2-logs", "LogsClient"),
 ]
 
 setup(

@@ -9,11 +9,27 @@ Use https://github.com/c2devel/boto3.git and python scripts instead.**
 Installation
 ------------
 
-Using pip:
+C2client package relies on forked versions of boto3 and botocore from the `C2Devel/boto3 <https://github.com/c2Devel/boto3>`_ and `C2Devel/botocore <https://github.com/c2Devel/botocore>`_ repositories. For isolated use our dependencies, it is highly recommended to use a virtual environment.
 
-   .. code-block:: bash
 
-      $ pip install c2client
+1. Clone the repository
+
+    .. code-block:: bash 
+
+       git clone https://github.com/C2Devel/c2-client.git && cd c2-client
+       
+2. Setup the virtual environment(Unix based system)
+
+    .. code-block:: bash 
+
+       python3 -m venv .venv && source .venv/bin/activate
+       
+3. Install the package in editable mode along with dependencies from requirements.txt
+
+    .. code-block:: bash
+
+       pip install -e . -r requirements.txt
+
 
 Usage
 -----

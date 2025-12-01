@@ -15,6 +15,16 @@ Using pip:
 
       $ pip install c2client
 
+But on new versions of Linux distributions it is not recommended to install package via public repository
+
+Manual build:
+
+   .. code-block:: bash
+
+     $ pip install -e .
+
+You can also use virtual environment
+
 Usage
 -----
 

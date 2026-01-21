@@ -241,3 +241,9 @@ class DirectConnectClient(C2Client):
 
     url_key = "DIRECT_CONNECT_URL"
     client_name = "directconnect"
+
+
+class KMSClient(C2Client):
+
+    url_key = "KMS_URL"
+    client_name = "kms"

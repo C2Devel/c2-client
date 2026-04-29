@@ -24,6 +24,7 @@ entrypoints = [
     ("c2-bs", "BSClient"),
     ("c2-ct", "CTClient"),
     ("c2-cw", "CWClient"),
+    ("c2-dc", "DirectConnectClient"),
     ("c2-ec2", "EC2Client"),
     ("c2-efs", "EFSClient"),
     ("c2-eks", "EKSClient"),
@@ -31,8 +32,8 @@ entrypoints = [
     ("c2-elb", "ELBClient"),
     ("c2-iam", "IAMClient"),
     ("c2-paas", "PaasClient"),
+    ("c2-rgt", "ResourceGroupsTaggingClient"),
     ("c2-route53", "Route53Client"),
-    ("c2-dc", "DirectConnectClient"),
     ("c2-kms", "KMSClient"),
 ]
 

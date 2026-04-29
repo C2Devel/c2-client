@@ -247,3 +247,9 @@ class KMSClient(C2Client):
 
     url_key = "KMS_URL"
     client_name = "kms"
+
+
+class ResourceGroupsTaggingClient(C2Client):
+
+    url_key = "RGT_URL"
+    client_name = "resourcegroupstaggingapi"

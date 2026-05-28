@@ -1,6 +1,6 @@
 import dataclasses
 import os
-from typing import Any, Dict
+from typing import Any, Callable, Dict, List, Optional
 
 from botocore.model import ListShape, StructureShape, Shape
 
@@ -20,8 +20,33 @@ class Parameter:
     shape: Shape
 
 
-def from_dot_notation(source):
-    """Convert a incoming query to a request dictionary.
+def flatten_key_value_dict(
+    target_list: List[Dict[str, Any]],
+    key_field: str = "Key",
+    value_field: str = "Value",
+ ) -> Dict[Any, Any]:
+    """
+    Generic flattening dot notation exit hook.
+
+    Transforms
+      [{<key_field>: <key>, <value_field>: <value>}]
+      into
+      {<key>: <value>}
+    """
+
+    return {
+        item[key_field]: item[value_field]
+        for item in target_list
+    }
+
+
+def from_dot_notation(
+    source: Dict[Any, Any],
+    exit_hooks: Optional[Dict[str, Callable]] = None,
+):
+    """
+    Convert a incoming query to a request dictionary.
+
     For example::
         1. {"Action": ["Action"], "Param": ["Value"]}
         2. {"Action": ["Action"], "Param.2": ["Value2"], "Param.1": ["Value1"]}
@@ -30,13 +55,23 @@ def from_dot_notation(source):
         1. {"Action": "Action", "Param": "Value"}
         2. {"Action": "Action", "Param": ["Value1", "Value2"]}
         3. {"Action": "Action", "Param": { "SubParam": "Value"}}
+
     :type query: dict
     :param query: This is dictionary, returned by '_get_query()'.
+    :type exit_hooks: dict
+    :param exit_hooks: Per-parameter mapping of additional transformation
+                       to be performed after parsing dot notation.
     """
 
     result = {"result": {}}
     for key, value in sorted(source.items()):
         _process_tokens(key.split("."), value, result, "result")
+
+    if exit_hooks is not None:
+        for parameter_name, exit_hook in exit_hooks.items():
+            if parameter_name in result["result"]:
+                result["result"][parameter_name] = exit_hook(result["result"][parameter_name])
+
     return result["result"]
 
 

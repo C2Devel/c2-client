@@ -6,13 +6,13 @@ import ssl
 import sys
 from abc import abstractmethod
 from functools import wraps
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 import boto3
 import inflection
 
 from c2client.errors import InvalidMethodName
-from c2client.utils import from_dot_notation, get_env_var, convert_args
+from c2client.utils import convert_args, flatten_key_value_dict, from_dot_notation, get_env_var
 
 
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -86,6 +86,12 @@ class BaseClient:
 
 class C2Client(BaseClient):
 
+    DOT_NOTATION_EXIT_HOOKS: Dict[str, Dict[str, Callable]] = {}
+    """
+    Per-method per-parameter transformation hooks
+    to be run after parsing request from dot notation.
+    """
+
     @classmethod
     def get_client(cls, verify: bool):
         """Return boto3 client."""
@@ -122,7 +128,13 @@ class C2Client(BaseClient):
         if arguments:
             arguments = cls.convert_fields_names(arguments)
             shape = client.meta.service_model.operation_model(method).input_shape
-            arguments = convert_args(from_dot_notation(arguments), shape)
+            arguments = convert_args(
+                from_dot_notation(
+                    arguments,
+                    exit_hooks=cls.DOT_NOTATION_EXIT_HOOKS.get(method),
+                ),
+                shape,
+            )
 
         result = getattr(client, inflection.underscore(method))(**arguments)
 
@@ -263,6 +275,12 @@ class ResourceGroupsTaggingClient(C2Client):
 
     url_key = "RGT_URL"
     client_name = "resourcegroupstaggingapi"
+
+    DOT_NOTATION_EXIT_HOOKS = {
+        "TagResources": {
+            "Tags": flatten_key_value_dict,
+        }
+    }
 
 
 class LogsClient(C2Client):

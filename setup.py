@@ -41,12 +41,12 @@ entrypoints = [
 setup(
     name="c2client",
     version=__version__,
-    description="CROC Cloud Platform - API Client",
+    description="RockitCloud Platform - API Client",
     long_description=get_description(),
     url="https://github.com/c2devel/c2-client",
     license="GPL3",
-    author="CROC Cloud Team",
-    author_email="devel@croc.ru",
+    author="RockitCLoud Team",
+    author_email="devel@k2.cloud",
     maintainer="Andrey Kulaev",
     maintainer_email="adkulaev@gmail.com",
     classifiers=[

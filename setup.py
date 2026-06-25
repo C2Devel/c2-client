@@ -45,7 +45,7 @@ setup(
     long_description=get_description(),
     url="https://github.com/c2devel/c2-client",
     license="GPL3",
-    author="RockitCLoud Team",
+    author="RockitCloud Team",
     author_email="devel@k2.cloud",
     maintainer="Andrey Kulaev",
     maintainer_email="adkulaev@gmail.com",

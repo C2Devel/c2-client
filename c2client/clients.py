@@ -2,7 +2,6 @@ import argparse
 import datetime
 import json
 import re
-import ssl
 import sys
 from abc import abstractmethod
 from functools import wraps
@@ -13,9 +12,6 @@ import inflection
 
 from c2client.errors import InvalidMethodName
 from c2client.utils import convert_args, flatten_key_value_dict, from_dot_notation, get_env_var
-
-
-ssl._create_default_https_context = ssl._create_unverified_context
 
 
 def exitcode(func: callable):
